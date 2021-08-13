@@ -63,14 +63,14 @@
    (cond-> (if group
              (MultiRaftProtocol/builder (str group))
              (MultiRaftProtocol/builder))
-     max-retries (.withMaxRetries (int max-retries))
-     max-timeout (.withMaxTimeout (utils/->duration max-timeout))
-     min-timeout (.withMaxTimeout (utils/->duration min-timeout))
-     retry-delay (.withRetryDelay (utils/->duration retry-delay))
+     max-retries            (.withMaxRetries (int max-retries))
+     max-timeout            (.withMaxTimeout (utils/->duration max-timeout))
+     min-timeout            (.withMaxTimeout (utils/->duration min-timeout))
+     retry-delay            (.withRetryDelay (utils/->duration retry-delay))
      communication-strategy (.withCommunicationStrategy (->communication-strategy communication-strategy))
-     partitioner (.withPartitioner (->partitioner partitioner))
-     read-consistency (.withReadConsistency (->read-consistency read-consistency))
-     recovery-strategy (.withRecoveryStrategy (->recovery recovery-strategy)))))
+     partitioner            (.withPartitioner (->partitioner partitioner))
+     read-consistency       (.withReadConsistency (->read-consistency read-consistency))
+     recovery-strategy      (.withRecoveryStrategy (->recovery recovery-strategy)))))
 
 (defn ->consistency
   "Converts to a consistency instance.
@@ -96,11 +96,11 @@
    (cond-> (if group
              (MultiPrimaryProtocol/builder (str group))
              (MultiPrimaryProtocol/builder))
-     backups (.withBackups (int backups))
+     backups     (.withBackups (int backups))
      max-retries (.withMaxRetries (int max-retries))
      consistency (.withConsistency (->consistency consistency))
      partitioner (.withPartitioner (->partitioner partitioner))
-     recovery (.withRecovery (->recovery recovery))
+     recovery    (.withRecovery (->recovery recovery))
      replication (.withReplication (->replication replication))
      retry-delay (.withRetryDelay (utils/->duration retry-delay)))))
 
@@ -112,41 +112,41 @@
 (defn ->peer-selector ^PeerSelector [f]
   (cond
     (instance? PeerSelector f) f
-    (keyword? f) (PeerSelectors/valueOf (string/upper-case (name f)))
-    :else (reify PeerSelector
-            (select [this entry membership] (f entry membership)))))
+    (keyword? f)               (PeerSelectors/valueOf (string/upper-case (name f)))
+    :else                      (reify PeerSelector
+                                 (select [this entry membership] (f entry membership)))))
 
 (defn ->timestamp-provider
   "v := #{TimestampProvider :wall_clock (fn [entry] ..<io.atomix.utils.time.Timestamp>..)}"
   ^TimestampProvider [v]
   (cond
     (instance? TimestampProvider v) v
-    (keyword? v) (TimestampProviders/valueOf (string/upper-case (name v)))
-    :else (reify TimestampProvider
-            (get [this entry] (v entry)))))
+    (keyword? v)                    (TimestampProviders/valueOf (string/upper-case (name v)))
+    :else                           (reify TimestampProvider
+                                      (get [this entry] (v entry)))))
 
 (defn anti-entropy [{:keys [gossip-interval anti-entropy-interval peers
                             peer-selector timestamp-provider
                             tombstones-disabled?]}]
   (cond-> (AntiEntropyProtocol/builder)
-    anti-entropy-interval (.withAntiEntropyInterval (utils/->duration anti-entropy-interval))
-    gossip-interval (.withGossipInterval (utils/->duration gossip-interval))
-    peers (.withPeers (set peers))
-    peer-selector (.withPeerSelector (->peer-selector peer-selector))
-    timestamp-provider (.withTimestampProvider timestamp-provider)
+    anti-entropy-interval             (.withAntiEntropyInterval (utils/->duration anti-entropy-interval))
+    gossip-interval                   (.withGossipInterval (utils/->duration gossip-interval))
+    peers                             (.withPeers (set peers))
+    peer-selector                     (.withPeerSelector (->peer-selector peer-selector))
+    timestamp-provider                (.withTimestampProvider timestamp-provider)
     (not (nil? tombstones-disabled?)) (.withTombstonesDisabled (boolean tombstones-disabled?))))
 
 (defn crdt [{:keys [gossip-interval timestamp-provider]}]
   (.build
    (cond-> (CrdtProtocol/builder)
-     gossip-interval (.withGossipInterval (utils/->duration gossip-interval))
+     gossip-interval    (.withGossipInterval (utils/->duration gossip-interval))
      timestamp-provider (.withTimestampProvider (->timestamp-provider timestamp-provider)))))
 
 (defn ->set ^SetProtocol [options]
   (cond
     (:anti-entropy options) (anti-entropy (:anti-entropy options))
-    (:crdt options) (crdt (:crdt options))
-    :else nil))
+    (:crdt options)         (crdt (:crdt options))
+    :else                   nil))
 
 (defn ->log-protocol ^LogProtocol [{:keys [name partitioner consistency replication recovery max-retries retry-delay] :as options}]
   (.build
@@ -156,6 +156,6 @@
      partitioner (.withPartitioner (->partitioner partitioner))
      consistency (.withConsistency (->consistency consistency))
      replication (.withReplication (->replication replication))
-     recovery (.withRecovery (->recovery recovery))
+     recovery    (.withRecovery (->recovery recovery))
      max-retries (.withMaxRetries (int max-retries))
      retry-delay (.withRetryDelay (utils/->duration retry-delay)))))

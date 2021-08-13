@@ -89,7 +89,7 @@
       (when (> offset old)
         (.compareAndSet old offset)))))
 
-(defn atomic-map-committer [^java.util.Map Map am]
+(defn atomic-map-committer [^io.atomix.core.map.AtomicMap am]
   (fn commit [partition-id offset]
     (.compute am partition-id
               (utils/bifunc
@@ -105,12 +105,4 @@
             (fn [record]
               (let [res (f record)]
                 (commit (:partition record) (:offset record))
-                res)))
-  (cond
-    (instance? DistributedLogPartition partition)
-    (.consume ^DistributedLogPartition partition (long starting-offset) (utils/consumer (comp f record->map)))
-
-    (instance? AsyncDistributedLogPartition partition)
-    (.consume ^AsyncDistributedLogPartition partition (long starting-offset) (utils/consumer (comp f record->map)))
-
-    :else (throw (IllegalArgumentException. "Invalid log type"))))
+                res))))

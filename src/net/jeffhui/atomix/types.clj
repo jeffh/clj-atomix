@@ -15,6 +15,7 @@
            io.atomix.core.collection.DistributedCollectionBuilder
            io.atomix.core.cache.CachedPrimitiveBuilder
            io.atomix.primitive.protocol.set.SetProtocol
+           io.atomix.utils.time.Versioned
            java.util.concurrent.Executors
            java.util.concurrent.CompletableFuture))
 
@@ -31,14 +32,14 @@
   (if (instance? CachedPrimitiveBuilder b)
     (cond-> b
       cache-enabled? (.withCacheEnabled (boolean cache-enabled?))
-      cache-size (.withCacheSize (int cache-size)))
+      cache-size     (.withCacheSize (int cache-size)))
     b))
 
 (defn- maybe-configure-collection [b {:keys [compatible-serialization? registration-required?]}]
   (if (instance? DistributedCollectionBuilder b)
     (cond-> b
       compatible-serialization? (.withCompatibleSerialization b (boolean compatible-serialization?))
-      registration-required? (.withRegistrationRequired b (boolean registration-required?)))
+      registration-required?    (.withRegistrationRequired b (boolean registration-required?)))
     b))
 
 (defn configure-primitive
@@ -97,9 +98,9 @@
   (.build
    (configure-primitive
     (cond-> (.mapBuilder agent (str name))
-      (:anti-entropy protocol) (.withProtocol (protocols/anti-entropy (:anti-entropy protocol)))
+      (:anti-entropy protocol)                       (.withProtocol (protocols/anti-entropy (:anti-entropy protocol)))
       (and protocol (nil? (:anti-entropy protocol))) (.withProtocol (protocols/->multi protocol))
-      (not (nil? allow-nil?)) (.withNullValues (boolean allow-nil?)))
+      (not (nil? allow-nil?))                        (.withNullValues (boolean allow-nil?)))
     options)))
 
 (defn distributed-set ^DistributedSet [^Atomix agent name {:keys [protocol] :as options}]
@@ -107,7 +108,7 @@
    (configure-primitive
     (let [^SetProtocol set-protocol (protocols/->set protocol)]
       (cond-> (.buildSet agent (str name))
-        set-protocol (.withProtocol set-protocol)
+        set-protocol                      (.withProtocol set-protocol)
         (and (not set-protocol) protocol) (.withProtocol (protocols/->multi protocol))))
     options)))
 
@@ -134,3 +135,7 @@
     (do (.close ^SyncPrimitive value)
         (CompletableFuture/completedFuture nil))))
 
+(defn versioned->map [^Versioned v]
+  {:value         (.value v)
+   :version       (.version v)
+   :creation-time (.creationTime v)})

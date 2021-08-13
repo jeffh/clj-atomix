@@ -100,9 +100,18 @@
                                           :consistency :linearizable
                                           :replication :synchronous}}))
 
-  (dotimes [i 100]
-    (log/produce lg (format "hello world %d" i)))
+  (def partition-state (t/atomic-map r1 "partitions" {:protocol {:raft {:read-consistency :linearizable}}}))
+
+  (into
+   {}
+   (map (fn [[k v]] [k (t/versioned->map v)]))
+   (.getAllPresent partition-state (.keySet partition-state)))
+
+  (t/close lg)
+
+  (dotimes [i 1000] (log/produce lg (str i)))
   (def all-parts (log/partitions lg))
+  (def outs (doall (map #(log/stateful-consume! % 0 (log/atomic-map-committer partition-state) (fn [m] (prn "RECV" m))) all-parts)))
   (def outs (doall (map #(log/consume! % 0 (fn [m] (prn "RECV" m))) all-parts)))
 
   (def r-echo-service (run-service r1 "echo" {} (fn [msg] msg)))
