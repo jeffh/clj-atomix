@@ -1,0 +1,26 @@
+version: "3.9"
+services:
+  mgmt1:
+    image: atomix/atomix:3.1.10
+    command: -m mgmt1 -c /opt/atomix/conf/atomix/atomix.conf -a mgmt1 --zone az1
+    ports:
+      - 5500:5678
+      - 6600:5679
+    volumes:
+      - ./conf/atomix/:/opt/atomix/conf/atomix/
+  mgmt2:
+    image: atomix/atomix:3.1.10
+    command: -m mgmt2 -c /opt/atomix/conf/atomix/atomix.conf -a mgmt2 --zone az2
+    ports:
+      - 5501:5678
+      - 6601:5679
+    volumes:
+      - ./conf/atomix/:/opt/atomix/conf/atomix/
+  mgmt3:
+    image: atomix/atomix:3.1.10
+    command: -m mgmt3 -c /opt/atomix/conf/atomix/atomix.conf -a mgmt3 --zone az3
+    ports:
+      - 5502:5678
+      - 6602:5679
+    volumes:
+      - ./conf/atomix/:/opt/atomix/conf/atomix/
