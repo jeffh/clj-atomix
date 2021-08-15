@@ -8,6 +8,11 @@ services:
       - 6600:5679
     volumes:
       - ./conf/atomix/:/opt/atomix/conf/atomix/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
   mgmt2:
     image: atomix/atomix:3.1.10
     command: -m mgmt2 -c /opt/atomix/conf/atomix/atomix.conf -a mgmt2 --zone az2
@@ -16,6 +21,11 @@ services:
       - 6601:5679
     volumes:
       - ./conf/atomix/:/opt/atomix/conf/atomix/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
   mgmt3:
     image: atomix/atomix:3.1.10
     command: -m mgmt3 -c /opt/atomix/conf/atomix/atomix.conf -a mgmt3 --zone az3
@@ -24,3 +34,122 @@ services:
       - 6602:5679
     volumes:
       - ./conf/atomix/:/opt/atomix/conf/atomix/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+  raft1:
+    image: atomix/atomix:3.1.10
+    command: -m raft1 -c /opt/atomix/conf/atomix/log.conf -a raft1 --zone az1
+    ports:
+      - 5503:5678
+      - 6603:5679
+    volumes:
+      - ./conf/atomix/:/opt/atomix/conf/atomix/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    depends_on:
+      - mgmt1
+      - mgmt2
+      - mgmt3
+    profiles:
+      - raft
+  raft2:
+    image: atomix/atomix:3.1.10
+    command: -m raft2 -c /opt/atomix/conf/atomix/log.conf -a raft2 --zone az2
+    ports:
+      - 5504:5678
+      - 6604:5679
+    volumes:
+      - ./conf/atomix/:/opt/atomix/conf/atomix/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    depends_on:
+      - mgmt1
+      - mgmt2
+      - mgmt3
+    profiles:
+      - raft
+  raft3:
+    image: atomix/atomix:3.1.10
+    command: -m raft3 -c /opt/atomix/conf/atomix/log.conf -a raft3 --zone az2
+    ports:
+      - 5505:5678
+      - 6605:5679
+    volumes:
+      - ./conf/atomix/:/opt/atomix/conf/atomix/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    depends_on:
+      - mgmt1
+      - mgmt2
+      - mgmt3
+    profiles:
+      - raft
+  log1:
+    image: atomix/atomix:3.1.10
+    command: -m log1 -c /opt/atomix/conf/atomix/log.conf -a log1 --zone az1
+    ports:
+      - 5506:5678
+      - 6606:5679
+    volumes:
+      - ./conf/atomix/:/opt/atomix/conf/atomix/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    depends_on:
+      - mgmt1
+      - mgmt2
+      - mgmt3
+    profiles:
+      - log
+  log2:
+    image: atomix/atomix:3.1.10
+    command: -m log2 -c /opt/atomix/conf/atomix/log.conf -a log2 --zone az2
+    ports:
+      - 5507:5678
+      - 6607:5679
+    volumes:
+      - ./conf/atomix/:/opt/atomix/conf/atomix/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    depends_on:
+      - mgmt1
+      - mgmt2
+      - mgmt3
+    profiles:
+      - log
+  log3:
+    image: atomix/atomix:3.1.10
+    command: -m log3 -c /opt/atomix/conf/atomix/log.conf -a log3 --zone az2
+    ports:
+      - 5508:5678
+      - 6608:5679
+    volumes:
+      - ./conf/atomix/:/opt/atomix/conf/atomix/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    depends_on:
+      - mgmt1
+      - mgmt2
+      - mgmt3
+    profiles:
+      - log
