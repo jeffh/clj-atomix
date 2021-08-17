@@ -4,6 +4,11 @@
            [io.atomix.utils.serializer Serializer Namespace]
            [com.esotericsoftware.kryo Kryo]
            [com.esotericsoftware.kryo.io Output Input]
+           io.atomix.cluster.MemberId
+           io.atomix.cluster.Node
+           io.atomix.cluster.Member
+           io.atomix.cluster.MemberConfig
+           io.atomix.utils.net.Address
            java.util.UUID
            java.util.function.BiFunction
            java.util.function.Function
@@ -11,6 +16,32 @@
            java.util.function.Predicate
            java.time.Duration
            java.time.temporal.ChronoUnit))
+
+(defn ^MemberId ->member-id
+  "Generates a atomix MemberId type from a string or node."
+  [id]
+  (cond
+    (instance? MemberId id) id
+    (instance? Node id)     (.id ^Node id)
+    :else                   (MemberId/from (str id))))
+
+(defn node-id [^Node n] (.id n))
+(defn node-address [^Node n]
+  (let [^Address addr (.address n)]
+    [(.host addr) (.port addr)]))
+
+(defn member->map [^Member m]
+  {:id         (str (.id m))
+   :properties (into {} (.properties m))
+   :active?    (.isActive m)
+   :rack       (.rack m)
+   :version    (str (.version m))
+   :zone       (.zone m)
+   :config     (let [^MemberConfig cfg (.config m)]
+                 {:address    (str (.getAddress cfg))
+                  :host       (.getHost cfg)
+                  :id         (str (.getId cfg))
+                  :properties (into {} (.getProperties cfg))})})
 
 (defn ^Duration ->duration
   ([v]

@@ -9,7 +9,6 @@
            [io.atomix.primitive Recovery Consistency Replication]
            io.atomix.primitive.protocol.ProxyProtocol
            io.atomix.primitive.protocol.set.SetProtocol
-           io.atomix.protocols.raft.partition.RaftPartitionGroup
            io.atomix.primitive.protocol.LogProtocol
            io.atomix.protocols.log.DistributedLogProtocol))
 
@@ -133,7 +132,7 @@
     gossip-interval                   (.withGossipInterval (utils/->duration gossip-interval))
     peers                             (.withPeers (set peers))
     peer-selector                     (.withPeerSelector (->peer-selector peer-selector))
-    timestamp-provider                (.withTimestampProvider timestamp-provider)
+    timestamp-provider                (.withTimestampProvider (->timestamp-provider timestamp-provider))
     (not (nil? tombstones-disabled?)) (.withTombstonesDisabled (boolean tombstones-disabled?))))
 
 (defn crdt [{:keys [gossip-interval timestamp-provider]}]

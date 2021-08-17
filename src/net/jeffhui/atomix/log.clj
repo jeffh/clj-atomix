@@ -3,15 +3,13 @@
             [net.jeffhui.atomix.utils :as utils]
             [net.jeffhui.atomix.types :as t])
   (:import io.atomix.core.log.DistributedLogBuilder
-           io.atomix.core.log.DistributedLogType
            io.atomix.core.log.DistributedLog
            io.atomix.core.log.AsyncDistributedLog
            io.atomix.core.log.DistributedLogPartition
            io.atomix.core.log.AsyncDistributedLogPartition
            io.atomix.core.Atomix
            io.atomix.core.log.Record
-           io.atomix.core.value.AtomicValue
-           io.atomix.protocols.log.DistributedLogProtocol))
+           io.atomix.core.value.AtomicValue))
 
 
 (defn distributed ^DistributedLog [^Atomix agent {:keys [protocol] :as config}]
@@ -20,15 +18,7 @@
    (t/configure-primitive
     (cond-> (.logBuilder agent)
       protocol (.withProtocol (protocols/->log-protocol protocol)))
-    config))
-  #_
-  (let [^DistributedLogBuilder b (.primitiveBuilder agent (str name) (DistributedLogType/instance))]
-    (.build
-     ^DistributedLogBuilder
-     (t/configure-primitive
-      (cond-> b
-        protocol (.withProtocol (protocols/->log-protocol protocol)))
-      config))))
+    config)))
 
 (defn produce [log-or-partition entry]
   (cond
@@ -98,7 +88,6 @@
                    (nil? v)     offset
                    (< v offset) offset
                    :else        v))))))
-
 
 (defn stateful-consume! [partition starting-offset commit f]
   (consume! partition starting-offset

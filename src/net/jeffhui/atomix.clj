@@ -1,11 +1,11 @@
 (ns net.jeffhui.atomix
   (:require [net.jeffhui.atomix.messaging :as msg]
             [net.jeffhui.atomix.pubsub :as pubsub]
-            [net.jeffhui.atomix.utils :as utils]
+            [net.jeffhui.atomix.utils :as utils :refer [->member-id member->map]]
             [clojure.string :as string]
             [clojure.java.io :as io])
   (:import [io.atomix.core Atomix]
-           [io.atomix.cluster Node MemberId Member MemberConfig]
+           io.atomix.cluster.Node
            [io.atomix.core.profile Profile]
            [io.atomix.cluster.discovery BootstrapDiscoveryProvider]
            [io.atomix.protocols.raft.partition RaftPartitionGroup]
@@ -14,7 +14,6 @@
            io.atomix.primitive.partition.MemberGroupStrategy
            io.atomix.cluster.protocol.HeartbeatMembershipProtocol
            io.atomix.cluster.protocol.SwimMembershipProtocol
-           io.atomix.utils.net.Address
            io.atomix.protocols.log.partition.LogPartitionGroup
            [java.util.concurrent Executors CompletableFuture]
            [java.util.function Function Consumer]
@@ -22,19 +21,6 @@
            [io.atomix.primitive.partition ManagedPartitionGroup]))
 
 (set! *warn-on-reflection* true)
-
-(defn ^MemberId ->member-id
-  "Generates a atomix MemberId type from a string or node."
-  [id]
-  (cond
-    (instance? MemberId id) id
-    (instance? Node id)     (.id ^Node id)
-    :else                   (MemberId/from (str id))))
-
-(defn node-id [^Node n] (.id n))
-(defn node-address [^Node n]
-  (let [^Address addr (.address n)]
-    [(.host addr) (.port addr)]))
 
 (defn ->node ^Node [m-or-v]
   (cond
@@ -201,6 +187,21 @@
                                                    :data-dir       (str "data/" local-node-id "/log")}}]}
                     config)))))
 
+(defn ^Atomix client
+  ([local-node-id nodes] (client local-node-id nodes nil))
+  ([local-node-id nodes config]
+   (let [nodes      (mapv ->node nodes)
+         ^Node self (first (filter (comp #{local-node-id} #(str (.id ^Node %))) nodes))]
+     (cluster (merge {:membership-provider (bootstrap-discover nodes)
+                      :member-id           local-node-id
+                      :host                (.host (.address self))
+                      :port                (.port (.address self))
+                      :membership-protocol {:heartbeat {:heartbeat-interval [10 :seconds]}}
+                      :management-group    {:raft {:name           "system"
+                                                   :num-partitions 1
+                                                   :members        nodes}}}
+                    config)))))
+
 (defn start
   (^CompletableFuture [^Atomix agent] (.start agent))
   ([^Atomix agent {:keys [join?]}]
@@ -213,18 +214,6 @@
    (cond-> (.stop agent)
      join? (.join))))
 
-(defn member->map [^Member m]
-  {:id         (str (.id m))
-   :properties (into {} (.properties m))
-   :active?    (.isActive m)
-   :rack       (.rack m)
-   :version    (str (.version m))
-   :zone       (.zone m)
-   :config     (let [^MemberConfig cfg (.config m)]
-                 {:address    (str (.getAddress cfg))
-                  :host       (.getHost cfg)
-                  :id         (str (.getId cfg))
-                  :properties (into {} (.getProperties cfg))})})
 (defn local-member [^Atomix agent] (member->map (.getLocalMember (.getMembershipService agent))))
 (defn members [^Atomix agent] (set (map member->map (.getMembers (.getMembershipService agent)))))
 (defn reachable-members [^Atomix agent] (set (map member->map (.getReachableMembers (.getMembershipService agent)))))

@@ -1,6 +1,7 @@
 (ns net.jeffhui.atomix.types
   (:require [net.jeffhui.atomix.utils :as utils :refer [*default-serializer*]]
-            [net.jeffhui.atomix.protocols :as protocols])
+            [net.jeffhui.atomix.protocols :as protocols]
+            [clojure.string :as string])
   (:import [io.atomix.core Atomix]
            [io.atomix.core.value AtomicValue DistributedValue]
            [io.atomix.core.set DistributedSet]
@@ -15,6 +16,12 @@
            io.atomix.core.collection.DistributedCollectionBuilder
            io.atomix.core.cache.CachedPrimitiveBuilder
            io.atomix.primitive.protocol.set.SetProtocol
+           io.atomix.core.election.LeaderElection
+           io.atomix.core.election.Leader
+           io.atomix.core.election.Leadership
+           io.atomix.core.election.LeadershipEventListener
+           io.atomix.core.election.LeadershipEvent
+           io.atomix.core.election.LeadershipEvent$Type
            io.atomix.utils.time.Versioned
            java.util.concurrent.Executors
            java.util.concurrent.CompletableFuture))
@@ -27,6 +34,31 @@
   (reify MapEventListener
     (event [self e] (apply-f self e))
     #_(isRelevant [self e] (filter-f self e))))
+
+(defn leader->map [^Leader l]
+  {:id        (.id l)
+   :term      (.term l)
+   :timestamp (.timestamp l)})
+
+(defn leadership->map [^Leadership ls]
+  {:candidates (seq (.candidates ls))
+   :leader     (leadership->map (.leader ls))})
+
+(defn leadership-event->map [^LeadershipEvent e]
+  {:event/type     (keyword (str (.type e)))
+   :event/time     (.time e)
+   :new-leadership (leadership-event->map (.newLeadership e))
+   :old-leadership (leadership-event->map (.oldLeadership e))
+   :topic          (.topic e)})
+
+(defn ->leadership-event-listener ^LeadershipEventListener [apply-f]
+  (reify LeadershipEventListener
+    (event [self e] (apply-f self (leadership-event->map e)))))
+
+(defn ->state-change-listener
+  "f := (fn [state := #{:closed :connected :expired :suspended}] ...)"
+  ^java.util.function.Consumer [f]
+  (utils/consumer (comp f keyword string/lower-case str)))
 
 (defn- maybe-configure-cached-primitive [b {:keys [cache-enabled? cache-size]}]
   (if (instance? CachedPrimitiveBuilder b)
@@ -43,7 +75,7 @@
     b))
 
 (defn configure-primitive
-  [^PrimitiveBuilder b {:keys [get build read-only? serializer]
+  [^PrimitiveBuilder b {:keys [read-only? serializer]
                         :or   {serializer *default-serializer*}
                         :as   options}]
   (cond-> (-> b
@@ -79,7 +111,7 @@
     (cond-> (.distributedValueBuilder agent (str name))
       protocol (.withProtocol (protocols/->multi protocol)))
     options)))
-,
+
 (defn distributed-queue ^DistributedQueue [^Atomix agent name {:keys [protocol] :as options}]
   (.build
    (configure-primitive
@@ -127,6 +159,9 @@
                               (or executor (Executors/newSingleThreadExecutor))))
     q))
 
+(defn stop-work-queue [^WorkQueue q]
+  (.stopProcessing q))
+
 (defn ->async ^AsyncPrimitive [^SyncPrimitive p] (.async p))
 (defn ->sync ^SyncPrimitive [^AsyncPrimitive a] (.sync a))
 (defn close [value]
@@ -139,3 +174,10 @@
   {:value         (.value v)
    :version       (.version v)
    :creation-time (.creationTime v)})
+
+(defn leader-election ^LeaderElection [^Atomix agent name {:keys [protocol] :as options}]
+  (.build
+   (configure-primitive
+    (cond-> (.leaderElectionBuilder agent (str name))
+      protocol (.withProtocol (protocols/->multi protocol)))
+    options)))

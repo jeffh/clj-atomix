@@ -2,106 +2,49 @@ version: "3.9"
 services:
   mgmt1:
     image: atomix/atomix:3.1.10
-    command: -m mgmt1 -c /opt/atomix/conf/atomix/atomix.conf -a mgmt1 --zone az1
+    command: -m mgmt1 -c /opt/atomix/conf/atomix/mgmt+raft.conf -a mgmt1:6600 --zone az1 --http-port 5500 --ignore-resources
     ports:
-      - 5500:5678
-      - 6600:5679
+      - 5500:5500
+      - 6600:6600
     volumes:
       - ./conf/atomix/:/opt/atomix/conf/atomix/
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 512M
+          cpus: '1'
+          memory: 1G
   mgmt2:
     image: atomix/atomix:3.1.10
-    command: -m mgmt2 -c /opt/atomix/conf/atomix/atomix.conf -a mgmt2 --zone az2
+    command: -m mgmt2 -c /opt/atomix/conf/atomix/mgmt+raft.conf -a mgmt2:6601 --zone az2 --http-port 5501 --ignore-resources
     ports:
-      - 5501:5678
-      - 6601:5679
+      - 5501:5501
+      - 6601:6601
     volumes:
       - ./conf/atomix/:/opt/atomix/conf/atomix/
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 512M
+          cpus: '1'
+          memory: 1G
   mgmt3:
     image: atomix/atomix:3.1.10
-    command: -m mgmt3 -c /opt/atomix/conf/atomix/atomix.conf -a mgmt3 --zone az3
+    command: -m mgmt3 -c /opt/atomix/conf/atomix/mgmt+raft.conf -a mgmt3:6602 --zone az3 --http-port 5502 --ignore-resources
     ports:
-      - 5502:5678
-      - 6602:5679
+      - 5502:5502
+      - 6602:6602
     volumes:
       - ./conf/atomix/:/opt/atomix/conf/atomix/
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 512M
-  raft1:
-    image: atomix/atomix:3.1.10
-    command: -m raft1 -c /opt/atomix/conf/atomix/log.conf -a raft1 --zone az1
-    ports:
-      - 5503:5678
-      - 6603:5679
-    volumes:
-      - ./conf/atomix/:/opt/atomix/conf/atomix/
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-    depends_on:
-      - mgmt1
-      - mgmt2
-      - mgmt3
-    profiles:
-      - raft
-  raft2:
-    image: atomix/atomix:3.1.10
-    command: -m raft2 -c /opt/atomix/conf/atomix/log.conf -a raft2 --zone az2
-    ports:
-      - 5504:5678
-      - 6604:5679
-    volumes:
-      - ./conf/atomix/:/opt/atomix/conf/atomix/
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-    depends_on:
-      - mgmt1
-      - mgmt2
-      - mgmt3
-    profiles:
-      - raft
-  raft3:
-    image: atomix/atomix:3.1.10
-    command: -m raft3 -c /opt/atomix/conf/atomix/log.conf -a raft3 --zone az2
-    ports:
-      - 5505:5678
-      - 6605:5679
-    volumes:
-      - ./conf/atomix/:/opt/atomix/conf/atomix/
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-    depends_on:
-      - mgmt1
-      - mgmt2
-      - mgmt3
-    profiles:
-      - raft
+          cpus: '1'
+          memory: 1G
   log1:
     image: atomix/atomix:3.1.10
-    command: -m log1 -c /opt/atomix/conf/atomix/log.conf -a log1 --zone az1
+    command: -m log1 -c /opt/atomix/conf/atomix/log.conf -a log1:6606 --zone az1 --http-port 5506 --ignore-resources
     ports:
-      - 5506:5678
-      - 6606:5679
+      - 5506:5506
+      - 6606:6606
     volumes:
       - ./conf/atomix/:/opt/atomix/conf/atomix/
     deploy:
@@ -117,10 +60,10 @@ services:
       - log
   log2:
     image: atomix/atomix:3.1.10
-    command: -m log2 -c /opt/atomix/conf/atomix/log.conf -a log2 --zone az2
+    command: -m log2 -c /opt/atomix/conf/atomix/log.conf -a log2:6607 --zone az2 --http-port 5507 --ignore-resources
     ports:
-      - 5507:5678
-      - 6607:5679
+      - 5507:5507
+      - 6607:6607
     volumes:
       - ./conf/atomix/:/opt/atomix/conf/atomix/
     deploy:
@@ -136,10 +79,10 @@ services:
       - log
   log3:
     image: atomix/atomix:3.1.10
-    command: -m log3 -c /opt/atomix/conf/atomix/log.conf -a log3 --zone az2
+    command: -m log3 -c /opt/atomix/conf/atomix/log.conf -a log3:6608 --zone az2 --http-port 5508 --ignore-resources
     ports:
-      - 5508:5678
-      - 6608:5679
+      - 5508:5508
+      - 6608:6608
     volumes:
       - ./conf/atomix/:/opt/atomix/conf/atomix/
     deploy:
@@ -153,3 +96,60 @@ services:
       - mgmt3
     profiles:
       - log
+  data1:
+    image: atomix/atomix:3.1.10
+    command: -m data1 -c /opt/atomix/conf/atomix/data.conf -a data1:6609 --zone az1 --http-port 5509 --ignore-resources
+    ports:
+      - 5509:5509
+      - 6609:6609
+    volumes:
+      - ./conf/atomix/:/opt/atomix/conf/atomix/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+    depends_on:
+      - mgmt1
+      - mgmt2
+      - mgmt3
+    profiles:
+      - data
+  data2:
+    image: atomix/atomix:3.1.10
+    command: -m data2 -c /opt/atomix/conf/atomix/data.conf -a data2:6610 --zone az2 --http-port 5510 --ignore-resources
+    ports:
+      - 5510:5510
+      - 6610:6610
+    volumes:
+      - ./conf/atomix/:/opt/atomix/conf/atomix/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+    depends_on:
+      - mgmt1
+      - mgmt2
+      - mgmt3
+    profiles:
+      - data
+  data3:
+    image: atomix/atomix:3.1.10
+    command: -m data3 -c /opt/atomix/conf/atomix/data.conf -a data3:6611 --zone az3 --http-port 5511 --ignore-resources
+    ports:
+      - 5511:5511
+      - 6611:6611
+    volumes:
+      - ./conf/atomix/:/opt/atomix/conf/atomix/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+    depends_on:
+      - mgmt1
+      - mgmt2
+      - mgmt3
+    profiles:
+      - data
