@@ -164,19 +164,26 @@
   (def partition-state (t/atomic-map r1 "partitions" {:protocol {:raft {:read-consistency :linearizable}}}))
 
   (def queue (t/work-queue c "test-work-queue" {:protocol {:primary {:backups     1
-                                                                :recovery    :recover
-                                                                :replication :synchronous}}}))
+                                                                     :recovery    :recover
+                                                                     :replication :synchronous}}}))
   (.close queue)
-  (time
-   (dotimes [i 10000]
-     (.poll queue)))
 
   (time
    (dotimes [i 10000]
-     (.add queue {:index i :value (str "key-" i)})))
+     (.addOne queue {:index i
+                     :value (str "key-" i)})))
 
   (time
-   (.addAll queue (mapv (fn [i] {:index i :value (str "key-" i)}) (range 10000))))
+   (.addMultiple queue (mapv (fn [i] {:index i
+                                      :value (str "key-" i)}) (range 10000))))
+
+  (time
+   (dotimes [i 10000]
+     (.take queue)))
+
+  (time
+   (dotimes [i 1000]
+     (.take queue 10)))
 
   
 
